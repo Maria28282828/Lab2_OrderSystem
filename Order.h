@@ -2,15 +2,12 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <ostream>
 #include "Product.h"
 #include "IObservable.h"
 #include "OrderStatus.h"
 #include "Discount.h"
 #include "Delivery.h"
-
-// Предварительные объявления, чтобы компилятор не ругался (мы создадим их позже)
-class Delivery;
-class Discount;
 
 class Order : public IObservable {
 private:
@@ -29,10 +26,14 @@ public:
     std::string getCustomer() const { return customer_; }
     OrderStatus getStatus() const { return status_; }
     
+    
+    const std::vector<std::shared_ptr<Product>>& getItems() const { 
+        return items_; 
+    }
+    
     void addItem(std::shared_ptr<Product> product) {
         items_.push_back(product);
     }
-
 
     void removeItem(int productId) {
         for (auto it = items_.begin(); it != items_.end(); ++it) {
@@ -65,25 +66,43 @@ public:
             status_ = newStatus;    
             
             OrderEvent event(id_, oldStatus, newStatus, 0); 
-            
             notify(event);
         }
     }
 
     void setDelivery(std::shared_ptr<Delivery> d) { delivery_ = d; }
-    void applyDiscount(std::shared_ptr<Discount> d) { 
-    discounts_.push_back(d); 
-    d->apply(*this); 
-}
     
+    void applyDiscount(std::shared_ptr<Discount> d) { 
+        discounts_.push_back(d); 
+        d->apply(*this); 
+    }
 };
+
 
 inline Order& operator+(Order& order, const std::shared_ptr<Discount>& discount) {
     order.applyDiscount(discount);
     return order;
 }
 
+
 inline Order& operator<<(const std::shared_ptr<Delivery>& delivery, Order& order) {
     order.setDelivery(delivery);
     return order;
+}
+
+
+inline std::ostream& operator<<(std::ostream& os, const Order& order) {
+    os << "Заказ ID: " << order.getId() 
+       << "  Клиент: " << order.getCustomer() 
+       << "  Статус: ";
+       
+    switch(order.getStatus()) {
+        case OrderStatus::Pending: os << "Ожидает оплаты"; break;
+        case OrderStatus::Paid: os << "Оплачен"; break;
+        case OrderStatus::Shipped: os << "Отправлен"; break;
+        case OrderStatus::Delivered: os << "Доставлен"; break;
+        case OrderStatus::Cancelled: os << "Отменен"; break;
+    }
+    os << "  Стоимость: " << order.getTotalPrice() << " руб.";
+    return os;
 }

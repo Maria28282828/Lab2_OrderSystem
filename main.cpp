@@ -63,6 +63,27 @@ int main() {
     std::cout << "Выручка ПОСЛЕ оплаты: " << manager.getTurnover() << " руб.\n";
     std::cout << "Количество клиентов: " << manager.getCustomerCount() << "\n\n";
 
+    std::cout << *order1 << "\n\n";
+
+    std::cout << "Сценарий 5: Применение нескольких скидок\n";
+    auto freeDelivery = std::make_shared<FreeDeliveryDiscount>();
+    *order1 + freeDelivery;
+    std::cout << "Применена вторая скидка (Бесплатная доставка).\n";
+    std::cout << *order1 << "\n\n";
+
+    std::cout << "Сценарий 6: Отмена заказа и проверка лимита\n";
+    auto order2 = manager.createOrder("Мария");
+    std::cout << "Создан заказ 2 (Мария). Всего активных: 2\n";
+    
+    order2->setStatus(OrderStatus::Cancelled);
+    std::cout << "Заказ 2 отменен.\n";
+
+    try {
+        auto order3 = manager.createOrder("Алла");
+        std::cout << "Создан заказ 3 (Алла). Лимит не превышен, так как заказ 2 отменен\n";
+    } catch (const std::exception& e) {
+        std::cout << "Ошибка: " << e.what() << "\n";
+    }
    
     return 0;
 }
